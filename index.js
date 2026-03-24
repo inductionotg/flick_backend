@@ -1,0 +1,41 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const generateRoute = require('./routes/generate');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json({ limit: '20mb' }));
+
+app.use((req, _res, next) => {
+  console.log(`[Server] ${req.method} ${req.url} - body size: ${JSON.stringify(req.body || {}).length} bytes`);
+  next();
+});
+
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.use('/api/generate', generateRoute);
+
+app.use((err, _req, res, _next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'Image too large (max 25MB).' });
+    }
+    return res.status(400).json({ error: err.message });
+  }
+  if (err && err.message === 'File must be an image') {
+    return res.status(400).json({ error: err.message });
+  }
+  console.error('[Server] Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error.' });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Server] Flick server running on http://0.0.0.0:${PORT}`);
+  console.log(`[Server] Accessible at http://192.168.1.20:${PORT}`);
+});
