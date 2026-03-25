@@ -9,7 +9,7 @@ const HOUR_MS = 60 * 60 * 1000;
 
 const generateLimiter = rateLimit({
   windowMs: HOUR_MS,
-  limit: 2,
+  limit: 6,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   handler: (req, res) => {
