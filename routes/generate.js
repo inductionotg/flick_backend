@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const { createAdapter } = require('../services/aiAdapter');
+const { sanitizePromptExtra } = require('../utils/promptGuard');
 
 const router = express.Router();
 
@@ -24,40 +25,36 @@ router.post('/', upload.single('image'), async (req, res) => {
     const style = req.body.style;
     const file = req.file;
 
-    console.log(`[Route] POST /api/generate (multipart) received`);
-    console.log(`[Route] style: ${style}`);
-    console.log(`[Route] file present: ${!!file}, size: ${file?.size}, mimetype: ${file?.mimetype}`);
+    const extraResult = sanitizePromptExtra(req.body.promptExtra);
+    if (!extraResult.ok) {
+      console.error(`[Route] rejected promptExtra: ${extraResult.error}`);
+      return res.status(400).json({ error: extraResult.error });
+    }
+    const promptExtra = extraResult.value;
+
+    
 
     if (!file || !file.buffer) {
-      console.error('[Route] rejected: no image file');
       return res.status(400).json({ error: 'Image file is required (field name: image).' });
     }
     if (!style) {
-      console.error('[Route] rejected: no style');
       return res.status(400).json({ error: 'Style is required.' });
     }
     if (!VALID_STYLES.includes(style)) {
-      console.error(`[Route] rejected: invalid style "${style}"`);
       return res.status(400).json({ error: `Invalid style. Must be one of: ${VALID_STYLES.join(', ')}` });
     }
 
     const base64 = file.buffer.toString('base64');
     const mimeType = file.mimetype || 'image/jpeg';
 
-    console.log(`[Route] calling AI adapter for style: ${style}, base64 length: ${base64.length}`);
     const adapter = createAdapter();
-    const result = await adapter.generate(base64, style, mimeType);
+    const result = await adapter.generate(base64, style, mimeType, promptExtra);
     const elapsed = Date.now() - startTime;
-
-    console.log(`[Route] success for style: ${style} in ${elapsed}ms`);
-    console.log(`[Route] imageUrl type: ${typeof result.imageUrl}, length: ${typeof result.imageUrl === 'string' ? result.imageUrl.length : 'N/A'}`);
 
     return res.json({ imageUrl: result.imageUrl, style });
   } catch (err) {
     const elapsed = Date.now() - startTime;
-    console.error(`[Route] error after ${elapsed}ms:`, err.message);
-    console.error(`[Route] full error:`, err);
-
+    
     if (err.status === 401 || err.code === 'invalid_api_key') {
       return res.status(500).json({ error: 'AI service authentication failed. Check API key.' });
     }
