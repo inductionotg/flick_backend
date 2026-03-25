@@ -26,7 +26,6 @@ app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 
 app.use((req, _res, next) => {
-  console.log(`[Server] ${req.method} ${req.url} - body size: ${JSON.stringify(req.body || {}).length} bytes`);
   next();
 });
 
@@ -46,7 +45,6 @@ app.use((err, _req, res, _next) => {
   if (err && err.message === 'File must be an image') {
     return res.status(400).json({ error: err.message });
   }
-  console.error('[Server] Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error.' });
 });
 

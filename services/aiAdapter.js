@@ -81,7 +81,6 @@ function createOpenAIAdapter() {
 
 function createReplicateAdapter() {
   const token = process.env.REPLICATE_API_TOKEN;
-  console.log(`[Adapter] creating Replicate adapter, token present: ${!!token}`);
   const replicate = new Replicate({ auth: token });
 
   return {
@@ -90,12 +89,10 @@ function createReplicateAdapter() {
 
       const denoising = STYLE_DENOISING[styleId] || 0.65;
 
-      console.log(`[Adapter] style: ${styleId}, denoising: ${denoising}`);
-      console.log(`[Adapter] base64 length: ${base64Image?.length}, mime: ${mimeType}`);
 
       const imageDataUri = `data:${mimeType};base64,${base64Image}`;
 
-      console.log('[Adapter] calling bxclib2/flux_img2img with positive_prompt');
+      
       const output = await replicate.run(
         'bxclib2/flux_img2img:0ce45202d83c6bd379dfe58f4c0c41e6cadf93ebbd9d938cc63cc0f2fcb729a5',
         {
@@ -130,7 +127,7 @@ function createReplicateAdapter() {
 }
 
 function createAdapter() {
-  const provider = (process.env.AI_PROVIDER || 'replicate').toLowerCase();
+  const provider = (process.env.AI_PROVIDER || 'openai').toLowerCase();
 
   switch (provider) {
     case 'openai':
