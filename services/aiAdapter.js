@@ -22,6 +22,14 @@ const STYLE_DENOISING = {
   sketch: 0.6,
 };
 
+function buildPrompt(styleId, promptExtra) {
+  const base = STYLE_PROMPTS[styleId];
+  if (!base) throw new Error(`Unknown style: ${styleId}`);
+  const extra = typeof promptExtra === 'string' ? promptExtra.trim() : '';
+  if (!extra) return base;
+  return `${base} Additional user direction: ${extra}`;
+}
+
 function extensionForMime(mimeType) {
   if (!mimeType) return 'jpg';
   if (mimeType.includes('png')) return 'png';
@@ -34,7 +42,6 @@ function createOpenAIAdapter() {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1.5';
 
-  console.log(`[Adapter] creating OpenAI adapter, key present: ${!!apiKey}, model: ${model}`);
 
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY is required when AI_PROVIDER=openai');
@@ -43,12 +50,8 @@ function createOpenAIAdapter() {
   const client = new OpenAI({ apiKey });
 
   return {
-    async generate(base64Image, styleId, mimeType = 'image/jpeg') {
-      const prompt = STYLE_PROMPTS[styleId];
-      if (!prompt) throw new Error(`Unknown style: ${styleId}`);
-
-      console.log(`[Adapter] OpenAI edit style: ${styleId}, mime: ${mimeType}`);
-      console.log(`[Adapter] base64 length: ${base64Image?.length}`);
+    async generate(base64Image, styleId, mimeType = 'image/jpeg', promptExtra = '') {
+      const prompt = buildPrompt(styleId, promptExtra);
 
       const buf = Buffer.from(base64Image, 'base64');
       const ext = extensionForMime(mimeType);
@@ -67,12 +70,10 @@ function createOpenAIAdapter() {
       const first = result.data?.[0];
       const b64 = first?.b64_json;
       if (!b64) {
-        console.error('[Adapter] OpenAI response:', JSON.stringify(result).slice(0, 500));
         throw new Error('OpenAI returned no image (missing b64_json).');
       }
 
       const imageUrl = `data:image/jpeg;base64,${b64}`;
-      console.log(`[Adapter] OpenAI success, data URL length: ${imageUrl.length}`);
       return { imageUrl };
     },
   };
@@ -84,9 +85,8 @@ function createReplicateAdapter() {
   const replicate = new Replicate({ auth: token });
 
   return {
-    async generate(base64Image, styleId, mimeType = 'image/jpeg') {
-      const prompt = STYLE_PROMPTS[styleId];
-      if (!prompt) throw new Error(`Unknown style: ${styleId}`);
+    async generate(base64Image, styleId, mimeType = 'image/jpeg', promptExtra = '') {
+      const prompt = buildPrompt(styleId, promptExtra);
 
       const denoising = STYLE_DENOISING[styleId] || 0.65;
 
@@ -109,9 +109,7 @@ function createReplicateAdapter() {
         }
       );
 
-      console.log(`[Adapter] output type: ${typeof output}, constructor: ${output?.constructor?.name}`);
-      console.log(`[Adapter] output toString: ${String(output)?.substring(0, 200)}`);
-
+      
       let imageUrl;
       if (typeof output === 'string') {
         imageUrl = output;
@@ -126,7 +124,6 @@ function createReplicateAdapter() {
         imageUrl = String(output);
       }
 
-      console.log(`[Adapter] resolved imageUrl: ${typeof imageUrl === 'string' ? imageUrl.substring(0, 200) : imageUrl}`);
       return { imageUrl };
     },
   };
@@ -134,7 +131,6 @@ function createReplicateAdapter() {
 
 function createAdapter() {
   const provider = (process.env.AI_PROVIDER || 'replicate').toLowerCase();
-  console.log(`[Adapter] provider: ${provider}`);
 
   switch (provider) {
     case 'openai':
