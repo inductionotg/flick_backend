@@ -9,7 +9,7 @@ const HOUR_MS = 60 * 60 * 1000;
 
 const generateLimiter = rateLimit({
   windowMs: HOUR_MS,
-  limit: 6,
+  limit: 2,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   handler: (req, res) => {
@@ -20,6 +20,7 @@ const generateLimiter = rateLimit({
 });
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
