@@ -2,7 +2,22 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const { rateLimit } = require('express-rate-limit');
 const generateRoute = require('./routes/generate');
+
+const HOUR_MS = 60 * 60 * 1000;
+
+const generateLimiter = rateLimit({
+  windowMs: HOUR_MS,
+  limit: 2,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Too many generation requests. Limit is 2 per hour. Try again later.',
+    });
+  },
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,7 +34,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.use('/api/generate', generateRoute);
+app.use('/api/generate', generateLimiter, generateRoute);
 
 app.use((err, _req, res, _next) => {
   if (err instanceof multer.MulterError) {
