@@ -2,6 +2,8 @@
 
 Stateless image-to-image generation server. Accepts a photo and a style, calls an AI provider, and returns a stylized image.
 
+**Deployed (Render):** [https://flick-backend-eqs8.onrender.com](https://flick-backend-eqs8.onrender.com)
+
 ---
 
 ## Setup
@@ -34,7 +36,7 @@ The server binds on `0.0.0.0:<PORT>` (default `3000`), so it is reachable from t
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `PORT` | No | `3000` | HTTP listen port |
-| `AI_PROVIDER` | No | `replicate` | `replicate` or `openai` |
+| `AI_PROVIDER` | No | `openai` | `replicate` or `openai` |
 | `REPLICATE_API_TOKEN` | When provider = replicate | — | Replicate API token |
 | `OPENAI_API_KEY` | When provider = openai | — | OpenAI API key |
 | `OPENAI_IMAGE_MODEL` | No | `gpt-image-1.5` | Override the OpenAI model used for `images.edit` |
@@ -120,7 +122,4 @@ Each style (`cartoon`, `flat`, `anime`, `pixel`, `sketch`) maps to a curated pro
 | **No database** | Nothing to provision or migrate; fully stateless | No history, no saved generations, no per-user quotas — rate limit is IP-based only |
 | **No authentication** | Frictionless local/LAN development with Expo | Unsafe if exposed to the public internet; anyone who can reach the server can burn API credits |
 | **IP-based rate limit (2/hr)** | Strong cost protection during dev | Too restrictive for multi-user prod; shared NAT means all users behind one IP share the budget |
-| **Hardcoded Replicate model version** | Deterministic output — same model, same results | Upgrading the model requires a code change and redeploy |
-| **OpenAI returns data URL, Replicate returns hosted URL** | Each path uses the fastest/cheapest output format for its provider | Client must handle both URL shapes (data URI vs. HTTPS); adds a conditional in the frontend |
-| **Generic 500 for auth errors** | Avoids leaking provider internals to the client | Harder to debug — "AI service authentication failed" could be an expired key, wrong provider, or network issue |
-| **No tests** | Faster iteration during early prototyping | Regressions are caught manually; adding tests later is straightforward since the adapter interface is well-defined |
+
