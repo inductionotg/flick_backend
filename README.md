@@ -100,9 +100,9 @@ The backend is a thin BFF (Backend For Frontend) — one route, no database, no 
 
 Uploaded images are held in RAM (`memoryStorage`). The buffer is base64-encoded and forwarded to the AI provider in the same request cycle. No temp files to clean up, no disk I/O, and no object-storage dependency.
 
-### express-rate-limit (2 req/hour)
+### express-rate-limit (6 req/hour)
 
-AI image generation is expensive. The rate limiter caps usage at 2 generations per hour per IP using `draft-8` standard headers. This prevents runaway spend during development and provides a basic abuse gate without needing user auth.
+AI image generation is expensive. The rate limiter caps usage at 6 generations per hour per IP using `draft-8` standard headers. This prevents runaway spend during development and provides a basic abuse gate without needing user auth.
 
 ### Prompt guard (`promptGuard.js`)
 
