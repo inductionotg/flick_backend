@@ -4,6 +4,7 @@ const cors = require('cors');
 const multer = require('multer');
 const { rateLimit } = require('express-rate-limit');
 const generateRoute = require('./routes/generate');
+const hairstyleRoute = require('./routes/hairstyle');
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -35,6 +36,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/generate', generateLimiter, generateRoute);
+app.use('/api/hairstyle', generateLimiter, hairstyleRoute);
 
 app.use((err, _req, res, _next) => {
   if (err instanceof multer.MulterError) {
